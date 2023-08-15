@@ -1,6 +1,7 @@
 package retepmil.personal.dailysteady.records.controller
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -35,6 +36,12 @@ class RecordController(
         date: LocalDate,
     ): List<RecordsVO> {
         return recordService.getLogs(RecordGetRequestDto(userId, date))
+    }
+
+    @DeleteMapping("record")
+    fun deleteRecord(@RequestParam("recordId") recordId: Long): String {
+        recordService.deleteRecord(recordId)
+        return "OK"
     }
 
 }
