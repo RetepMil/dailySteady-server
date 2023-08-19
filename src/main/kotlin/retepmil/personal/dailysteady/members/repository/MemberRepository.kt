@@ -6,5 +6,5 @@ import retepmil.personal.dailysteady.members.domain.Member
 
 @Repository
 interface MemberRepository : JpaRepository<Member, Long> {
-    fun findByEmail(memberEmail: String): Member
+    fun findByEmail(memberEmail: String): Member?
 }
