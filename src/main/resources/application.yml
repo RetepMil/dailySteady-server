@@ -2,11 +2,13 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        show-sql: true
+        highlight_sql: true
     database: postgresql
-
+    open-in-view: true
   datasource:
     hikari:
       maximum-pool-size: 4

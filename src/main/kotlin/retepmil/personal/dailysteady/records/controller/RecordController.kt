@@ -28,7 +28,7 @@ class RecordController(
 
     @GetMapping("/record")
     fun getRecords(
-        @RequestParam("userId")
+        @RequestParam("member_email")
         userId: String,
 
         @RequestParam("date")

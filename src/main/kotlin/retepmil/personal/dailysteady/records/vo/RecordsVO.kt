@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 
 data class RecordsVO (
     val recordId: Long,
-    val userId: String,
+    val email: String?,
     val createdAt: LocalDateTime,
     val content: String,
 )
