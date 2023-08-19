@@ -1,8 +1,8 @@
 package retepmil.personal.dailysteady.records.service
 
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.client.HttpClientErrorException.BadRequest
 import retepmil.personal.dailysteady.members.repository.MemberRepository
 import retepmil.personal.dailysteady.records.domain.Record
 import retepmil.personal.dailysteady.records.dto.RecordGetRequestDto
@@ -12,13 +12,13 @@ import retepmil.personal.dailysteady.records.vo.RecordsVO
 
 @Service
 @Transactional
-class RecordService @Autowired constructor(
+class RecordService (
     private val recordRepository: RecordRepository,
     private val memberRepository: MemberRepository,
 ) {
     fun saveRecord(request: RecordSaveRequestDto) {
         val memberEmail = request.email
-        val requester = memberRepository.findByEmail(memberEmail)
+        val requester = memberRepository.findByEmail(memberEmail) ?: throw Exception("")
         val newRecord = Record(null, requester, request.time, request.content)
         recordRepository.save(newRecord)
     }

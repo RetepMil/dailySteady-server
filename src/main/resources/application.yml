@@ -4,8 +4,8 @@ spring:
       ddl-auto: create
     properties:
       hibernate:
-        format_sql: true
         show-sql: true
+        format_sql: true
         highlight_sql: true
     database: postgresql
     open-in-view: true
@@ -19,3 +19,20 @@ spring:
 
 server:
   port: 9000
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+logging:
+  pattern:
+    console: "[%d{HH:mm:ss.SSS}][%-5level][%logger.%method:line%line] - %msg%n"
+  level:
+    org:
+      hibernate:
+        SQL: debug
+        type.descriptor.sql: trace
+
+jwt:
+  secret: d8e3b829ff785f3465143d93993a36790d569231e969b0aa70a01b437fb7c844
