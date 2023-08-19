@@ -13,10 +13,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
-import retepmil.personal.dailysteady.common.security.dto.CustomUser
-import retepmil.personal.dailysteady.members.domain.Member
-import java.lang.IllegalArgumentException
-import java.lang.RuntimeException
 import java.util.*
 
 const val EXPIRATION_MILLISECONDS: Long = 1000 * 60 * 60 * 24 * 7 // 7일
@@ -47,9 +43,9 @@ class JwtTokenProvider {
         val accessToken = Jwts.builder()
             .setSubject(authentication.name)
             .claim("auth", authorities)
+            .signWith(key, SignatureAlgorithm.HS256)
             .setIssuedAt(now)
             .setExpiration(accessExpiration)
-            .signWith(key, SignatureAlgorithm.HS256)
             .compact()
 
         return TokenInfo("Bearer", accessToken)

@@ -26,8 +26,8 @@ class SecurityConfig(
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             // HttpServletRequest를 사용하는 요청들에 대한 접근제한을 설정
             .authorizeHttpRequests { request ->
-                request.requestMatchers("/member/signin").permitAll()
-                    .requestMatchers("/member/signup").permitAll()
+                request.requestMatchers("/signin", "/signup").anonymous()
+                    .requestMatchers("/member").hasRole("MEMBER")
                     .anyRequest().authenticated()
             }
             .addFilterBefore(

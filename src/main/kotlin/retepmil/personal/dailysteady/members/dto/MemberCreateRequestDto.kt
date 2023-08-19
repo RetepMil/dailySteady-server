@@ -3,6 +3,7 @@ package retepmil.personal.dailysteady.members.dto
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
+import org.springframework.security.crypto.password.PasswordEncoder
 import retepmil.personal.dailysteady.members.domain.Member
 
 data class MemberCreateRequestDto(
@@ -22,5 +23,5 @@ data class MemberCreateRequestDto(
     @field:NotBlank
     val username: String,
 ) {
-    fun toEntity() = Member(null, email, password, username)
+    fun toEntity(encoder: PasswordEncoder) = Member(null, this.email, encoder.encode(this.password), this.username)
 }
