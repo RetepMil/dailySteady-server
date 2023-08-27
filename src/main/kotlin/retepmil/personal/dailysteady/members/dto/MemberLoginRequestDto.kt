@@ -3,6 +3,7 @@ package retepmil.personal.dailysteady.members.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
+import org.springframework.security.crypto.password.PasswordEncoder
 
 data class MemberLoginRequestDto(
     @field:NotBlank

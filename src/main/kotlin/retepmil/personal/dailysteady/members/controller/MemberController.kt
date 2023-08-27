@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.*
-import retepmil.personal.dailysteady.common.dto.BaseResponse
+import retepmil.personal.dailysteady.common.dto.DataResponseDto
 import retepmil.personal.dailysteady.members.service.MemberService
 import retepmil.personal.dailysteady.members.vo.MemberInfoVO
 
@@ -17,9 +17,9 @@ class MemberController(
     private val logger: Logger = LoggerFactory.getLogger(MemberController::class.java)
 
     @GetMapping
-    fun info(@RequestParam("email") @NotBlank @Email email: String): BaseResponse<MemberInfoVO> {
+    fun info(@RequestParam("email") @NotBlank @Email email: String): DataResponseDto<MemberInfoVO> {
         logger.debug("MemberController -> info 함수 진입 :: 파라미터 : {}", email)
         val memberInfo = memberService.getMemberInfo(email)
-        return BaseResponse(data = memberInfo)
+        return DataResponseDto(200, "회원가입이 완료되었습니다", memberInfo)
     }
 }

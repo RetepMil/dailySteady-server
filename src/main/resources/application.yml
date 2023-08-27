@@ -4,7 +4,6 @@ spring:
       ddl-auto: create
     properties:
       hibernate:
-        show-sql: true
         format_sql: true
         highlight_sql: true
     database: postgresql
@@ -33,6 +32,7 @@ logging:
       hibernate:
         SQL: debug
         type.descriptor.sql: trace
+    retepmil.personal.dailysteady: debug
 
 jwt:
   secret: d8e3b829ff785f3465143d93993a36790d569231e969b0aa70a01b437fb7c844
