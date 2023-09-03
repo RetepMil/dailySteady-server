@@ -1,4 +1,4 @@
-package retepmil.personal.dailysteady.common.security
+package retepmil.personal.dailysteady.common.security.jwt
 
 data class TokenInfo(
     val grantType: String,

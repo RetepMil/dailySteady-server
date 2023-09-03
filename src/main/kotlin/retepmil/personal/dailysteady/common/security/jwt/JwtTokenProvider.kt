@@ -1,4 +1,4 @@
-package retepmil.personal.dailysteady.common.security
+package retepmil.personal.dailysteady.common.security.jwt
 
 import io.jsonwebtoken.*
 import io.jsonwebtoken.io.Decoders

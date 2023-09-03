@@ -1,4 +1,4 @@
-package retepmil.personal.dailysteady.common.security
+package retepmil.personal.dailysteady.common.security.jwt
 
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ServletRequest
