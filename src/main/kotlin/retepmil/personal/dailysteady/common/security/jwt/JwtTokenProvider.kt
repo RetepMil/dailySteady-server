@@ -33,6 +33,7 @@ class JwtTokenProvider {
      * Token 생성
      */
     fun createToken(authentication: Authentication): TokenInfo {
+        logger.debug("Token 생성 시작 : {}", authentication)
         val authorities: String = authentication
             .authorities
             .joinToString(",", transform = GrantedAuthority::getAuthority)

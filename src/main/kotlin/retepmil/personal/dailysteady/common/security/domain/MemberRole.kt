@@ -14,7 +14,7 @@ class MemberRole(
     @Enumerated(EnumType.STRING)
     val role: ROLE,
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(foreignKey = ForeignKey(name = "fk_member_role_member_id"))
     val member: Member,
 )

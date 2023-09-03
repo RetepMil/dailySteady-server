@@ -6,12 +6,10 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
-import retepmil.personal.dailysteady.common.security.jwt.TokenInfo
 import retepmil.personal.dailysteady.common.security.domain.MemberRole
+import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
 import retepmil.personal.dailysteady.common.security.repository.MemberRoleRepository
 import retepmil.personal.dailysteady.common.security.status.ROLE
-import retepmil.personal.dailysteady.members.domain.Member
 import retepmil.personal.dailysteady.members.dto.MemberCreateRequestDto
 import retepmil.personal.dailysteady.members.dto.MemberLoginRequestDto
 import retepmil.personal.dailysteady.members.dto.MemberLoginResponseDto
@@ -52,9 +50,7 @@ class MemberService(
 
         val authentication =
             authenticationManagerBuilder.`object`.authenticate(authenticationToken)
-        logger.debug("{}", authentication.toString())
-
-        val tokenInfo = jwtTokenProvider.createToken(authentication = authenticationToken)
+        val tokenInfo = jwtTokenProvider.createToken(authentication)
         val member = memberRepository.findByEmail(request.email) ?:
             throw MemberNotFoundException()
         val username = member.username

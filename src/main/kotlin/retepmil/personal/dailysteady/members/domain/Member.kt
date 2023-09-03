@@ -20,10 +20,9 @@ data class Member(
 
     @Column(nullable = false, length = 50)
     var name: String,
-
+) : BaseTime(), UserDetails {
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
     var memberRole: List<MemberRole>? = null
-) : BaseTime(), UserDetails {
 
     override fun getAuthorities() =
         memberRole?.map { SimpleGrantedAuthority(it.role.name) }?.toMutableList() ?: mutableListOf<GrantedAuthority>()

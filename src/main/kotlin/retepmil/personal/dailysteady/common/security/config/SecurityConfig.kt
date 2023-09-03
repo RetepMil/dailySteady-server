@@ -2,6 +2,7 @@ package retepmil.personal.dailysteady.common.security.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
@@ -26,6 +27,9 @@ class SecurityConfig(
 
             // token을 사용하는 방식이므로 csrf를 비활성화
             .csrf { it.disable() }
+
+            //
+            .cors(Customizer.withDefaults())
 
             // token을 사용하는 방식이므로 STATELESS로 설정
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
