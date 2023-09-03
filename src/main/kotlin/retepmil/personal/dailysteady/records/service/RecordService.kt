@@ -7,7 +7,6 @@ import retepmil.personal.dailysteady.records.domain.Record
 import retepmil.personal.dailysteady.records.dto.RecordGetRequestDto
 import retepmil.personal.dailysteady.records.dto.RecordSaveRequestDto
 import retepmil.personal.dailysteady.records.repository.RecordRepository
-import retepmil.personal.dailysteady.records.vo.RecordsVO
 
 @Service
 @Transactional
@@ -25,10 +24,8 @@ class RecordService (
         return newRecord
     }
 
-    fun getLogs(request: RecordGetRequestDto): List<RecordsVO> {
-        val getRecords = recordRepository.getRecordsByDate(request.email, request.date)
-        println(getRecords)
-        return listOf()
+    fun getLogs(request: RecordGetRequestDto): List<Record> {
+        return recordRepository.getRecordsByDate(request.email, request.date)
     }
 
     fun deleteRecord(recordId: Long) {

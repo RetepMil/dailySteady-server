@@ -12,9 +12,7 @@ class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
 ) : GenericFilterBean() {
     override fun doFilter(request: ServletRequest?, response: ServletResponse?, chain: FilterChain?) {
-        logger.debug("JWT 토큰 검증 시작")
         val token = resolveToken(request as HttpServletRequest)
-        logger.debug("Token : $token")
 
         if (token != null && jwtTokenProvider.validateToken(token)) {
             val authentication = jwtTokenProvider.getAuthentication(token)
@@ -25,6 +23,7 @@ class JwtAuthenticationFilter(
     }
 
     private fun resolveToken(request: HttpServletRequest): String? {
+        logger.debug("JWT 토큰 검증 시작")
         val bearerToken = request.getHeader("Authorization")
 
         return if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {

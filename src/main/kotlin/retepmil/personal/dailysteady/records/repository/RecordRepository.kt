@@ -8,6 +8,6 @@ import java.time.LocalDate
 
 @Repository
 interface RecordRepository : JpaRepository<Record, Long> {
-    @Query(value = "SELECT r.* FROM Record r WHERE DATE(createdat) =:date AND email =:email", nativeQuery = true)
+    @Query(value = "SELECT r.* FROM Record r WHERE DATE(created_at) =:date AND member_email =:email", nativeQuery = true)
     fun getRecordsByDate(email: String, date: LocalDate): List<Record>
 }

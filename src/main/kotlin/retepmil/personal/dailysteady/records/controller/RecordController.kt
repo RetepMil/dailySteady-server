@@ -27,11 +27,14 @@ class RecordController(
 
     @GetMapping("/record")
     fun getRecords(
-        @RequestParam("member_email")
+        @RequestParam("email")
         userId: String,
 
         @RequestParam("date")
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
         date: LocalDate,
-    ): BaseResponseDto = DataResponseDto(200, recordService.getLogs(RecordGetRequestDto(userId, date)))
+    ): BaseResponseDto {
+        val logs = recordService.getLogs(RecordGetRequestDto(userId, date))
+        return DataResponseDto(200, logs)
+    }
 }
