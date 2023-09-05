@@ -8,7 +8,6 @@ open class BaseResponseDto (
     open var code: Int,
     open var message: String,
 ) {
-
     companion object {
         fun of(code: Int, message: String): BaseResponseDto {
             val httpStatus = HttpStatus.valueOf(code)
