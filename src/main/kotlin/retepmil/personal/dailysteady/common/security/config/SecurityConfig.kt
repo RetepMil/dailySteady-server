@@ -55,4 +55,5 @@ class SecurityConfig(
     @Bean
     fun passwordEncoder(): PasswordEncoder =
         PasswordEncoderFactories.createDelegatingPasswordEncoder()
+
 }

@@ -11,9 +11,11 @@ import org.springframework.web.filter.GenericFilterBean
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
 ) : GenericFilterBean() {
-    override fun doFilter(request: ServletRequest?, response: ServletResponse?, chain: FilterChain?) {
-        val token = resolveToken(request as HttpServletRequest)
+    override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain?) {
+        logger.debug("JWT 필터 로직 실행")
 
+        // HttpServletRequest의 accessToken 값에 대한 검증을 실시
+        val token = resolveAccessToken(request as HttpServletRequest)
         if (token != null && jwtTokenProvider.validateToken(token)) {
             val authentication = jwtTokenProvider.getAuthentication(token)
             SecurityContextHolder.getContext().authentication = authentication
@@ -22,10 +24,10 @@ class JwtAuthenticationFilter(
         chain?.doFilter(request, response)
     }
 
-    private fun resolveToken(request: HttpServletRequest): String? {
-        logger.debug("JWT 토큰 검증 시작")
-        val bearerToken = request.getHeader("Authorization")
+    private fun resolveAccessToken(request: HttpServletRequest): String? {
+        logger.debug("JWT accessToken 검증 시작")
 
+        val bearerToken = request.getHeader("Authorization")
         return if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
             bearerToken.substring(7)
         } else {

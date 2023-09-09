@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import retepmil.personal.dailysteady.common.dto.BaseResponseDto
 import retepmil.personal.dailysteady.common.dto.DataResponseDto
+import retepmil.personal.dailysteady.common.security.exception.InvalidRefreshTokenException
+import retepmil.personal.dailysteady.common.security.exception.RefreshTokenNotFoundException
 import retepmil.personal.dailysteady.members.exception.MemberDuplicateException
 import retepmil.personal.dailysteady.members.exception.MemberNotFoundException
 
@@ -37,5 +39,13 @@ class CustomExceptionHandler {
 
     @ExceptionHandler(MemberNotFoundException::class)
     protected fun handleMemberNotFoundException(ex: MemberNotFoundException): BaseResponseDto =
+        BaseResponseDto.of(404, ex.message!!)
+
+    @ExceptionHandler(RefreshTokenNotFoundException::class)
+    protected fun handleRefreshTokenNotFoundException(ex: RefreshTokenNotFoundException): BaseResponseDto =
+        BaseResponseDto.of(404, ex.message!!)
+
+    @ExceptionHandler(InvalidRefreshTokenException::class)
+    protected fun handleInvalidRefreshTokenException(ex: InvalidRefreshTokenException): BaseResponseDto =
         BaseResponseDto.of(404, ex.message!!)
 }

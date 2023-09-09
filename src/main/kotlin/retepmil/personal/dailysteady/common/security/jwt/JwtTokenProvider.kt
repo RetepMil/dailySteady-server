@@ -6,6 +6,7 @@ import io.jsonwebtoken.security.Keys
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.ResponseCookie
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.GrantedAuthority
@@ -15,7 +16,9 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
 import java.util.*
 
-const val EXPIRATION_MILLISECONDS: Long = 1000 * 60 * 60 * 24 * 7 // 7일
+const val expirationMiliseconds: Long = 1000L * 60L * 60L * 12L // 12시간
+
+const val maxAgeSeconds: Long = 1000L * 60L * 60L * 24L * 14L // 14 일
 
 @Component
 class JwtTokenProvider {
@@ -27,6 +30,16 @@ class JwtTokenProvider {
         Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret))
     }
 
+    companion object {
+        fun generateRefreshTokenCookie(token: String): ResponseCookie = ResponseCookie.from("refreshToken")
+            .value(token)
+            .path("/")
+            .maxAge(maxAgeSeconds)
+            .httpOnly(false) // 배포 환경에서는 true로 설정 필요
+            .secure(true)
+            .build()
+    }
+
     private val logger: Logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
 
     /*
@@ -34,22 +47,39 @@ class JwtTokenProvider {
      */
     fun createToken(authentication: Authentication): TokenInfo {
         logger.debug("Token 생성 시작 : {}", authentication)
+
         val authorities: String = authentication
             .authorities
             .joinToString(",", transform = GrantedAuthority::getAuthority)
+        val accessToken = generateAccessToken(authentication.name, authorities)
+        val refreshToken = generateRefreshToken(authentication.name)
 
+        return TokenInfo("Bearer", accessToken, refreshToken).also {
+            logger.debug("${authentication.name}에 대한 토큰 발급 정보 :")
+            logger.debug("accessToken : {}", it.accessToken)
+            logger.debug("refreshToken : {}", it.refreshToken)
+        }
+    }
+
+    private fun generateAccessToken(name: String, authorities: String): String {
         val now = Date()
-        val accessExpiration = Date(now.time + EXPIRATION_MILLISECONDS)
-
-        val accessToken = Jwts.builder()
-            .setSubject(authentication.name)
+        val expireDate = Date(now.time + expirationMiliseconds)
+        return Jwts.builder()
+            .setSubject(name)
             .claim("auth", authorities)
-            .signWith(key, SignatureAlgorithm.HS256)
             .setIssuedAt(now)
-            .setExpiration(accessExpiration)
+            .setExpiration(expireDate)
+            .signWith(key, SignatureAlgorithm.HS256)
             .compact()
+    }
 
-        return TokenInfo("Bearer", accessToken)
+    private fun generateRefreshToken(name: String): String {
+        val now = Date()
+        return Jwts.builder()
+            .setSubject(name)
+            .setIssuedAt(now)
+            .signWith(key, SignatureAlgorithm.HS256)
+            .compact()
     }
 
     /*
