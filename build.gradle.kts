@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.springframework.boot.gradle.tasks.bundling.BootBuildImage
 
 plugins {
 	id("org.springframework.boot") version "3.1.2"
@@ -42,6 +43,7 @@ dependencies {
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.postgresql:postgresql:42.6.0")
 
+	// TEST
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 }
 
@@ -54,4 +56,15 @@ tasks.withType<KotlinCompile> {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+}
+
+tasks.named<BootBuildImage>("bootBuildImage") {
+	imageName.set("lkslyj2/dailysteady:latest")
+	publish.set(true)
+	docker {
+		publishRegistry {
+			username.set("lkslyj2")
+			password.set("PeterLim1!")
+		}
+	}
 }

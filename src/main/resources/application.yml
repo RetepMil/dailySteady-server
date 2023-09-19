@@ -1,7 +1,7 @@
 spring:
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -11,10 +11,13 @@ spring:
   datasource:
     hikari:
       maximum-pool-size: 4
-    url: jdbc:postgresql://localhost:5432/test
+    url: jdbc:postgresql://daily-steady-db.clgq6c3hfkhr.ap-southeast-2.rds.amazonaws.com:5432/dev
     username: postgres
-    password: 1234
+    password: 12345678
     driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: always
 
 server:
   port: 9000
@@ -23,6 +26,8 @@ server:
       charset: UTF-8
       enabled: true
       force: true
+  error:
+    include-message: always
 
 logging:
   pattern:
