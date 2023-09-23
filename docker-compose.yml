@@ -1,0 +1,12 @@
+version: "3.7"
+services:
+  daily-steady-dev:
+    container_name: dailysteady-dev
+    image: lkslyj2/dailysteady:latest
+    restart: always
+    environment:
+      JAVA_OPTS: "-Dspring.profiles.active=dev"
+    expose:
+      - "9000"
+    ports:
+      - "9000:9000"
