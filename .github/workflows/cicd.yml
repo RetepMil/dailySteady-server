@@ -64,4 +64,4 @@ jobs:
             docker rm -f $(docker ps -qa)
             docker rmi ${{ secrets.DOCKER_USERNAME }}/dailysteady
             docker pull ${{ secrets.DOCKER_USERNAME }}/dailysteady
-            docker-compose up
+            docker-compose up -d
