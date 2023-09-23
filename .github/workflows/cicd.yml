@@ -2,7 +2,6 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - "infra/cicd-script"
       - "develop"
       - "main"
   pull_request:
