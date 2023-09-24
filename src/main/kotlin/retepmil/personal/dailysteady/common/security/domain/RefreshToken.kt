@@ -12,4 +12,7 @@ data class RefreshToken(
 
     @Column(nullable = false)
     val refreshTokenValue: String,
+
+    @Column(nullable = false)
+    val expiresAt: String,
 )

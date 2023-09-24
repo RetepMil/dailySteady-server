@@ -3,6 +3,7 @@ package retepmil.personal.dailysteady.members.service
 import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -51,12 +52,21 @@ class MemberService(
 
         val authenticationToken = UsernamePasswordAuthenticationToken(request.email, request.password)
         val authentication = authenticationManagerBuilder.`object`.authenticate(authenticationToken)
+        SecurityContextHolder.getContext().authentication = authentication
+
         val tokenInfo = jwtTokenProvider.createToken(authentication)
-
         val refreshTokenValue = tokenInfo.refreshToken
-        val refreshToken = RefreshToken(null, request.email, refreshTokenValue)
 
-        refreshTokenRepository.save(refreshToken)
+        // Refresh Token이 없다면 신규 발급
+        val refreshToken = refreshTokenRepository.findByEmail(request.email)
+        if (refreshToken == null) {
+            val newRefreshToken = RefreshToken(null, request.email, refreshTokenValue)
+            refreshTokenRepository.save(newRefreshToken)
+        }
+        //
+        else {
+
+        }
 
         val member = memberRepository.findByEmail(request.email) ?: throw MemberNotFoundException()
         val username = member.username

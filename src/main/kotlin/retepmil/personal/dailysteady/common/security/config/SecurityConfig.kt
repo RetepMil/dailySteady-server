@@ -40,6 +40,7 @@ class SecurityConfig(
                     .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                     .requestMatchers("/signin", "/signup").anonymous()
                     .requestMatchers("/member").hasRole("MEMBER")
+                    .requestMatchers("/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
             }
 
