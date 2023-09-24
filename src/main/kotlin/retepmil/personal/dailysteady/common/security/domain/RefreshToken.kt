@@ -1,6 +1,7 @@
 package retepmil.personal.dailysteady.common.security.domain
 
 import jakarta.persistence.*
+import java.time.LocalDateTime
 
 @Entity
 data class RefreshToken(
@@ -14,5 +15,5 @@ data class RefreshToken(
     val refreshTokenValue: String,
 
     @Column(nullable = false)
-    val expiresAt: String,
+    var expiredAt: LocalDateTime? = LocalDateTime.now().plusHours(24)
 )

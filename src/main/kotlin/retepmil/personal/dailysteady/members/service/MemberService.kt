@@ -23,6 +23,7 @@ import retepmil.personal.dailysteady.members.exception.MemberNotFoundException
 import retepmil.personal.dailysteady.members.repository.MemberRepository
 import retepmil.personal.dailysteady.members.vo.MemberInfoVO
 import java.security.InvalidParameterException
+import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -63,9 +64,9 @@ class MemberService(
             val newRefreshToken = RefreshToken(null, request.email, refreshTokenValue)
             refreshTokenRepository.save(newRefreshToken)
         }
-        //
+        // 있다면 Refresh Token 정보 업데이트
         else {
-
+            refreshTokenRepository.update(request.email, refreshToken.refreshTokenValue)
         }
 
         val member = memberRepository.findByEmail(request.email) ?: throw MemberNotFoundException()
