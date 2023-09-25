@@ -45,12 +45,12 @@ class AuthController(
     }
 
     @PatchMapping("/member/authentication")
-    fun renewJwt(
+    fun renewAccessToken(
         @CookieValue("x-access-token") accessTokenValue: String,
         @CookieValue("refreshToken") refreshTokenValue: String,
         response: HttpServletResponse,
     ): DataResponseDto<MemberLoginResponseDto> {
-        logger.debug("SecurityController -> renewJwt 함수 진입, COOKIE 인증 로직 수행")
+        logger.debug("SecurityController -> renewAccessToken 함수 진입")
 
         val responseDto = memberService.renewAccessToken(accessTokenValue, refreshTokenValue)
 

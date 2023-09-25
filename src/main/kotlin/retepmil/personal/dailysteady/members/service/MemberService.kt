@@ -9,8 +9,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import retepmil.personal.dailysteady.common.security.domain.MemberRole
 import retepmil.personal.dailysteady.common.security.domain.RefreshToken
-import retepmil.personal.dailysteady.common.security.exception.InvalidRefreshTokenException
+import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
 import retepmil.personal.dailysteady.common.security.exception.RefreshTokenNotFoundException
+import retepmil.personal.dailysteady.common.security.jwt.JwtCode
 import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
 import retepmil.personal.dailysteady.common.security.repository.MemberRoleRepository
 import retepmil.personal.dailysteady.common.security.repository.RefreshTokenRepository
@@ -23,7 +24,6 @@ import retepmil.personal.dailysteady.members.exception.MemberNotFoundException
 import retepmil.personal.dailysteady.members.repository.MemberRepository
 import retepmil.personal.dailysteady.members.vo.MemberInfoVO
 import java.security.InvalidParameterException
-import java.time.LocalDateTime
 
 @Service
 @Transactional
@@ -78,17 +78,14 @@ class MemberService(
     fun renewAccessToken(refreshTokenValue: String, accessTokenValue: String): MemberLoginResponseDto {
         logger.debug("Refresh Token 검증 로직 수행")
 
+        if (jwtTokenProvider.validateToken(accessTokenValue) != JwtCode.ACCESS) throw InvalidTokenException()
         val authentication = jwtTokenProvider.getAuthentication(accessTokenValue)
         val refreshToken = refreshTokenRepository.findByEmail(authentication.name)
             ?: throw RefreshTokenNotFoundException()
 
+        if (jwtTokenProvider.validateToken(refreshTokenValue) != JwtCode.ACCESS) throw InvalidTokenException()
         val dbRefreshToken = refreshToken.refreshTokenValue
-        refreshTokenRepository.delete(refreshToken)
-
-        if (refreshTokenValue != dbRefreshToken) throw InvalidRefreshTokenException()
-
-        /* -------------------- */
-        /* -------------------- */
+        if (refreshTokenValue != dbRefreshToken) throw InvalidTokenException()
 
         logger.debug("Access Token 재발급 로직 수행")
 
@@ -96,7 +93,7 @@ class MemberService(
         val newRefreshTokenValue = tokenInfo.refreshToken
         val newRefreshToken = RefreshToken(null, authentication.name, newRefreshTokenValue)
 
-        refreshTokenRepository.save(newRefreshToken)
+        refreshTokenRepository.update(authentication.name, newRefreshToken.refreshTokenValue)
 
         val member = memberRepository.findByEmail(authentication.name) ?: throw MemberNotFoundException()
 
