@@ -34,7 +34,7 @@ class RecordController(
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
         date: LocalDate,
     ): BaseResponseDto {
-        val logs = recordService.getLogs(RecordGetRequestDto(userId, date))
+        val logs = recordService.getLogsByDate(RecordGetRequestDto(userId, date))
         return DataResponseDto(200, logs)
     }
 }

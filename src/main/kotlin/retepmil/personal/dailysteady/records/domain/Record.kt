@@ -14,7 +14,7 @@ data class Record(
     val memberEmail: String,
 
     @Column(nullable = false)
-    @JsonFormat(pattern="yyyy-MM-dd")
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     val createdAt: LocalDateTime,
 
     @Column(columnDefinition = "TEXT")

@@ -24,8 +24,7 @@ class RecordService (
         return newRecord
     }
 
-    fun getLogs(request: RecordGetRequestDto): List<Record> {
-
+    fun getLogsByDate(request: RecordGetRequestDto): List<Record> {
         return recordRepository.getRecordsByDate(request.email, request.date)
     }
 

@@ -33,6 +33,10 @@ class CustomExceptionHandler {
         return DataResponseDto(404, errors)
     }
 
+    @ExceptionHandler(AccessTokenExpiredException::class)
+    protected fun handleMemberDuplicateException(ex: AccessTokenExpiredException): BaseResponseDto =
+        BaseResponseDto.of(404, ex.message!!)
+
     @ExceptionHandler(MemberDuplicateException::class)
     protected fun handleMemberDuplicateException(ex: MemberDuplicateException): BaseResponseDto =
         BaseResponseDto.of(404, ex.message!!)
