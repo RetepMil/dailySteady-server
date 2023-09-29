@@ -6,14 +6,14 @@ import jakarta.validation.constraints.NotBlank
 import org.springframework.security.crypto.password.PasswordEncoder
 
 data class MemberLoginRequestDto(
-    @field:NotBlank
     @field:Email
-    val email: String,
+    val email: String = "",
 
-    @field:NotBlank
     @JsonProperty("password")
     private val _password: String?,
 ) {
     val password: String
         get() = _password!!
+
+    fun isTokenSignin() = this.email == "" || this._password == null
 }

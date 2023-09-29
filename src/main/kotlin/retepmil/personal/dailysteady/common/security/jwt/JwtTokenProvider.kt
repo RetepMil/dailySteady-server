@@ -14,6 +14,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+import retepmil.personal.dailysteady.common.security.domain.RefreshToken
+import retepmil.personal.dailysteady.common.security.repository.RefreshTokenRepository
 import java.util.*
 
 const val expirationMiliseconds: Long = 1000L * 60L * 60L * 12L // 12시간
@@ -21,23 +24,15 @@ const val expirationMiliseconds: Long = 1000L * 60L * 60L * 12L // 12시간
 const val maxAgeSeconds: Long = 1000L * 60L * 60L * 24L * 14L // 14 일
 
 @Component
-class JwtTokenProvider {
+class JwtTokenProvider(
+    private val refreshTokenRepository: RefreshTokenRepository,
+) {
 
     @Value("\${jwt.secret}")
     lateinit var secret: String
 
     private val key by lazy {
         Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret))
-    }
-
-    companion object {
-        fun generateRefreshTokenCookie(token: String): ResponseCookie = ResponseCookie.from("refreshToken")
-            .value(token)
-            .path("/")
-            .maxAge(maxAgeSeconds)
-            .httpOnly(false) // 배포 환경에서는 true로 설정 필요
-            .secure(true)
-            .build()
     }
 
     private val logger: Logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
@@ -82,13 +77,10 @@ class JwtTokenProvider {
             .compact()
     }
 
-    /*
-     * Token 정보 추출
-     */
     fun getAuthentication(token: String): Authentication {
         val claims: Claims = getClaims(token)
 
-        val auth = claims["auth"] ?: throw RuntimeException("잘못된 토큰입니다.")
+        val auth = claims["auth"] ?: throw RuntimeException("토큰에 인증 관련 정보가 없습니다.")
 
         // 권한 정보 추출
         val authorities: Collection<GrantedAuthority> = (auth as String)
@@ -100,24 +92,24 @@ class JwtTokenProvider {
         return UsernamePasswordAuthenticationToken(principal, "", authorities)
     }
 
-    /*
-     * Token 검증
-     */
-    fun validateToken(token: String): Boolean {
+    @Transactional
+    fun getRefreshToken(identifier: String): RefreshToken =
+        refreshTokenRepository.findByEmail(identifier) ?: throw IllegalArgumentException()
+
+    fun validateToken(token: String): JwtCode {
         return try {
             getClaims(token)
-            true
+            JwtCode.ACCESS
         } catch (e: Exception) {
-            when(e) {
-                is SecurityException -> {} // Invalid JWT Token
-                is MalformedJwtException -> {} // Invalid JWT Token
-                is ExpiredJwtException -> {} // Expired JWT Token
-                is UnsupportedJwtException -> {} // Unsupported JWT Token
-                is IllegalArgumentException -> {} // JWT claims string is empty
-                else -> {}
-            }
             logger.error(e.message)
-            false
+            when(e) {
+                is SecurityException -> JwtCode.SECURITY_ERROR // Invalid JWT Token
+                is MalformedJwtException -> JwtCode.MALFORMED // Invalid JWT Token
+                is ExpiredJwtException -> JwtCode.EXPIRED // Expired JWT Token
+                is UnsupportedJwtException -> JwtCode.UNSUPPORTED // Unsupported JWT Token
+                is IllegalArgumentException -> JwtCode.ILLEGAL_ARGUMENT // JWT claims string is empty
+                else -> JwtCode.UNKNOWN
+            }
         }
     }
 
@@ -127,4 +119,23 @@ class JwtTokenProvider {
             .build()
             .parseClaimsJws(token)
             .body
+
+    companion object {
+        fun generateRefreshTokenCookie(refreshTokenValue: String): ResponseCookie = ResponseCookie.from("refreshToken")
+            .value(refreshTokenValue)
+            .path("/")
+            .maxAge(maxAgeSeconds)
+            .httpOnly(false) // 배포 환경에서는 true로 설정 필요
+            .secure(true)
+            .sameSite("None")
+            .build()
+
+        fun generateAccessTokenCookie(accessTokenValue: String): ResponseCookie = ResponseCookie.from("x-access-token")
+            .value(accessTokenValue)
+            .maxAge(expirationMiliseconds)
+            .httpOnly(false)
+            .secure(true)
+            .sameSite("None")
+            .build()
+    }
 }
