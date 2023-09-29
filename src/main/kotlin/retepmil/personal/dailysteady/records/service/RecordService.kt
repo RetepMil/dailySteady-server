@@ -16,7 +16,8 @@ class RecordService (
 ) {
     fun saveRecord(request: RecordSaveRequestDto): Record {
         val memberEmail = request.email
-        val requester = memberRepository.findByEmail(memberEmail) ?: throw Exception("유저가 존재하지 않습니다")
+        val requester = memberRepository.findByEmail(memberEmail)
+            ?: throw Exception("유저가 존재하지 않습니다")
 
         val newRecord = Record(null, requester.email, request.time, request.content)
         recordRepository.save(newRecord)

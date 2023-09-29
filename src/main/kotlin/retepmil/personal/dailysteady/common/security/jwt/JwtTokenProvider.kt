@@ -72,19 +72,15 @@ class JwtTokenProvider(
         val now = Date()
         return Jwts.builder()
             .setSubject(name)
-            .claim("name", name)
             .setIssuedAt(now)
             .signWith(key, SignatureAlgorithm.HS256)
             .compact()
     }
 
-    /*
-     * Token 정보 추출
-     */
     fun getAuthentication(token: String): Authentication {
         val claims: Claims = getClaims(token)
 
-        val auth = claims["auth"] ?: throw RuntimeException("잘못된 토큰입니다.")
+        val auth = claims["auth"] ?: throw RuntimeException("토큰에 인증 관련 정보가 없습니다.")
 
         // 권한 정보 추출
         val authorities: Collection<GrantedAuthority> = (auth as String)
@@ -100,9 +96,6 @@ class JwtTokenProvider(
     fun getRefreshToken(identifier: String): RefreshToken =
         refreshTokenRepository.findByEmail(identifier) ?: throw IllegalArgumentException()
 
-    /*
-     * Token 검증
-     */
     fun validateToken(token: String): JwtCode {
         return try {
             getClaims(token)
@@ -128,12 +121,21 @@ class JwtTokenProvider(
             .body
 
     companion object {
-        fun generateRefreshTokenCookie(token: String): ResponseCookie = ResponseCookie.from("refreshToken")
-            .value(token)
+        fun generateRefreshTokenCookie(refreshTokenValue: String): ResponseCookie = ResponseCookie.from("refreshToken")
+            .value(refreshTokenValue)
             .path("/")
             .maxAge(maxAgeSeconds)
             .httpOnly(false) // 배포 환경에서는 true로 설정 필요
             .secure(true)
+            .sameSite("None")
+            .build()
+
+        fun generateAccessTokenCookie(accessTokenValue: String): ResponseCookie = ResponseCookie.from("x-access-token")
+            .value(accessTokenValue)
+            .maxAge(expirationMiliseconds)
+            .httpOnly(false)
+            .secure(true)
+            .sameSite("None")
             .build()
     }
 }

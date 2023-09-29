@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.util.StringUtils
 import org.springframework.web.filter.GenericFilterBean
+import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
 
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
@@ -21,25 +22,21 @@ class JwtAuthenticationFilter(
         if (token != null && jwtTokenProvider.validateToken(token) == JwtCode.ACCESS) {
             val authentication = jwtTokenProvider.getAuthentication(token)
             SecurityContextHolder.getContext().authentication = authentication
-        }
-
-        else if (token != null && jwtTokenProvider.validateToken(token) == JwtCode.EXPIRED) {
+        } else if (token != null && jwtTokenProvider.validateToken(token) == JwtCode.EXPIRED) {
             logger.debug("Access Token 유효기간 만료")
-
-            if (request.getHeaders("Auth") != null) {
-                val email = request.getHeader("Auth")
-                val refreshToken = jwtTokenProvider.getRefreshToken(email)
-
-                if (jwtTokenProvider.validateToken(refreshToken.refreshTokenValue) == JwtCode.ACCESS) {
-                    logger.debug("Refresh Token이 유효하기 때문에 Access Token 재발급")
-                    val authentication = jwtTokenProvider.getAuthentication(token)
-                    val newToken = jwtTokenProvider.createToken(authentication)
-                    SecurityContextHolder.getContext().authentication = authentication
-                    (response as HttpServletResponse).setHeader(HttpHeaders.AUTHORIZATION, newToken.accessToken)
-                }
+            val email = request.getHeader("Authorization")
+            val givenRefreshTokenValue = request.cookies.filter { it.name == "refreshToken" }[0].value
+            val storedRefreshToken = jwtTokenProvider.getRefreshToken(email)
+            if (givenRefreshTokenValue != storedRefreshToken.refreshTokenValue)
+                throw InvalidTokenException()
+            if (jwtTokenProvider.validateToken(givenRefreshTokenValue) == JwtCode.ACCESS) {
+                logger.debug("Refresh Token 유효, Access Token 재발급")
+                val authentication = jwtTokenProvider.getAuthentication(token)
+                val newToken = jwtTokenProvider.createToken(authentication)
+                SecurityContextHolder.getContext().authentication = authentication
+                (response as HttpServletResponse).setHeader(HttpHeaders.AUTHORIZATION, newToken.accessToken)
             }
         }
-
         chain?.doFilter(request, response)
     }
 
@@ -48,8 +45,6 @@ class JwtAuthenticationFilter(
         val bearerToken = request.getHeader("Authorization")
         return if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
             bearerToken.substring(7)
-        } else {
-            null
-        }
+        } else request.cookies.find { it.name == "x-access-token" }?.value
     }
 }
