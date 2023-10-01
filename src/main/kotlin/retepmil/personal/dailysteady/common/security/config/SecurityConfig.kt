@@ -2,7 +2,6 @@ package retepmil.personal.dailysteady.common.security.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpMethod
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -38,7 +37,7 @@ class SecurityConfig(
             .authorizeHttpRequests { request ->
                 request
                     .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-                    .requestMatchers("/signin", "/signup").permitAll()
+                    .requestMatchers("/signin", "/signup", "/health").permitAll()
                     .requestMatchers("/member").hasRole("MEMBER")
                     // .requestMatchers("/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
