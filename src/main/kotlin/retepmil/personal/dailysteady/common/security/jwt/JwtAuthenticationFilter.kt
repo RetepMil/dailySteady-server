@@ -16,9 +16,15 @@ class JwtAuthenticationFilter(
 ) : GenericFilterBean() {
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain?) {
         logger.debug("JWT 필터 로직 실행")
+        val httpRequest = request as HttpServletRequest
+
+        if (httpRequest.requestURI == "/health") {
+            chain?.doFilter(request, response)
+            return
+        }
 
         // HttpServletRequest의 accessToken 값에 대한 검증을 실시
-        val token = resolveAccessToken(request as HttpServletRequest)
+        val token = resolveAccessToken(httpRequest)
         if (token != null && jwtTokenProvider.validateToken(token) == JwtCode.ACCESS) {
             val authentication = jwtTokenProvider.getAuthentication(token)
             SecurityContextHolder.getContext().authentication = authentication
