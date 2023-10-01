@@ -31,7 +31,7 @@ server:
 
 logging:
   pattern:
-    console: "\"[%d{HH:mm:ss.SSS}][%-5level][%logger.%method:line%line] - %msg%n\""
+    console: "[%d{HH:mm:ss.SSS}][%-5level][%logger.%method:line%line] - %msg%n"
   level:
     org:
       hibernate:
