@@ -4,6 +4,7 @@ on:
     branches:
       - "develop"
       - "main"
+      - "hotfix/cd-script"
   pull_request:
     branches:
       - "develop"
@@ -40,6 +41,7 @@ jobs:
           cd ./src/main/resources
           touch ./application.yml
           echo "${{ secrets.APPLICATION_YML_DEV }}" > ./application.yml
+          cat ./application.yml
         shell: bash
 
       - name: Grant execute permission for gradlew
