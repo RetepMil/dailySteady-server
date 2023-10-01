@@ -10,7 +10,7 @@ spring:
     open-in-view: true
   datasource:
     hikari:
-      maximum-pool-size: 8
+      maximum-pool-size: 4
     url: jdbc:postgresql://daily-steady-db.clgq6c3hfkhr.ap-southeast-2.rds.amazonaws.com:5432/dev
     username: postgres
     password: 12345678
@@ -31,7 +31,7 @@ server:
 
 logging:
   pattern:
-    console: "[%d{HH:mm:ss.SSS}][%-5level][%logger.%method:line%line] - %msg%n"
+    console: "\"[%d{HH:mm:ss.SSS}][%-5level][%logger.%method:line%line] - %msg%n\""
   level:
     org:
       hibernate:
