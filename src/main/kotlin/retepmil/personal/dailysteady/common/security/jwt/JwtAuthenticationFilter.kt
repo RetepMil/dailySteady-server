@@ -51,6 +51,6 @@ class JwtAuthenticationFilter(
         val bearerToken = request.getHeader("Authorization")
         return if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer")) {
             bearerToken.substring(7)
-        } else request.cookies.find { it.name == "x-access-token" }?.value
+        } else request.cookies?.find { it.name == "x-access-token" }?.value
     }
 }
