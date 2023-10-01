@@ -1,7 +1,6 @@
 package retepmil.personal.dailysteady.members.service
 
 import org.slf4j.LoggerFactory
-import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.core.Authentication
@@ -12,10 +11,7 @@ import org.springframework.transaction.annotation.Transactional
 import retepmil.personal.dailysteady.common.security.domain.MemberRole
 import retepmil.personal.dailysteady.common.security.domain.RefreshToken
 import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
-import retepmil.personal.dailysteady.common.security.exception.RefreshTokenNotFoundException
-import retepmil.personal.dailysteady.common.security.jwt.JwtCode
 import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
-import retepmil.personal.dailysteady.common.security.jwt.TokenInfo
 import retepmil.personal.dailysteady.common.security.repository.MemberRoleRepository
 import retepmil.personal.dailysteady.common.security.repository.RefreshTokenRepository
 import retepmil.personal.dailysteady.common.security.status.ROLE
@@ -64,14 +60,15 @@ class MemberService(
             SecurityContextHolder.getContext().authentication = authentication
             logger.debug("아이디/패스워드 로그인 성공")
         } else logger.debug("토큰 로그인 성공")
-        logger.debug(authentication.toString())
-        logger.debug(authentication.name)
+
+        val email = authentication.name
+        val member = memberRepository.findByEmail(email)
+            ?: throw MemberNotFoundException()
 
         val tokenInfo = jwtTokenProvider.createToken(authentication)
         val refreshTokenValue = tokenInfo.refreshToken
 
         // Refresh Token이 없다면 신규 발급
-        val email = authentication.name
         val refreshToken = refreshTokenRepository.findByEmail(email)
         if (refreshToken == null) {
             val newRefreshToken = RefreshToken(null, email, refreshTokenValue)
@@ -80,9 +77,6 @@ class MemberService(
 
         // 있다면 Refresh Token 정보 업데이트
         else refreshTokenRepository.update(email, refreshToken.refreshTokenValue)
-
-        val member = memberRepository.findByEmail(email)
-            ?: throw MemberNotFoundException()
 
         return MemberLoginResponseDto(member.email, member.name, tokenInfo)
     }

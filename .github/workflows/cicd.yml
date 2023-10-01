@@ -60,7 +60,11 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            docker rm -f $(docker ps -qa)
-            docker rmi ${{ secrets.DOCKER_USERNAME }}/dailysteady
-            docker pull ${{ secrets.DOCKER_USERNAME }}/dailysteady
-            docker-compose up -d
+#            docker rm -f $(docker ps -qa)
+#            docker rmi ${{ secrets.DOCKER_USERNAME }}/dailysteady
+#            docker pull ${{ secrets.DOCKER_USERNAME }}/dailysteady
+#            docker-compose up -d
+            docker run --name dailysteady -d --rm \
+            -p 9000:9000 \
+            --env JAVA_OPTS="-Dspring.profiles.active=dev" \
+            lkslyj2/dailysteady:latest
