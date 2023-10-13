@@ -36,7 +36,6 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Make 'application.yml'
-        if: contains(github.ref, 'develop')
         run: |
           cd ./src/main/resources
           touch ./application.yml
