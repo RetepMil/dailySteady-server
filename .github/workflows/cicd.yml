@@ -35,6 +35,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Inject Resource Files
+        run: |
+          mkdir ./src/main/resources
+        shell: bash
+
       - name: Make 'application.yml'
 #        if: contains(github.ref, 'main')
         run: |
