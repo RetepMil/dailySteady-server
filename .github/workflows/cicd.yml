@@ -4,7 +4,7 @@ on:
     branches:
       - "develop"
       - "main"
-      - "infra/https-config"
+      - "infra/**"
   pull_request:
     branches:
       - "develop"
@@ -36,6 +36,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Make 'application.yml'
+#        if: contains(github.ref, 'main')
         run: |
           cd ./src/main/resources
           touch ./application.yml
@@ -43,13 +44,11 @@ jobs:
           cat ./application.yml
         shell: bash
 
-      - name: Make 'application.yml'
-        if: contains(github.ref, 'main')
+      - name: Make 'keystore.p12'
         run: |
           cd ./src/main/resources
-          touch ./application.yml
-          echo "${{ secrets.APPLICATION_YML }}" | base64 --decode > ./application.yml
-          cat ./application.yml
+          touch ./keystore.p12
+          echo "${{ secrets.KEYSTORE }}" | base64 --decode > ./keystore.p12
         shell: bash
 
       - name: Grant execute permission for gradlew

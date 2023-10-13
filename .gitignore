@@ -5,6 +5,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 application.yml
+**/keystore.p12
+**/keystore.p12.base64
+
 
 ### IntelliJ IDEA ###
 .idea
