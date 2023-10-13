@@ -4,7 +4,7 @@ on:
     branches:
       - "develop"
       - "main"
-      - "hotfix/cd-script"
+      - "infra/**"
   pull_request:
     branches:
       - "develop"
@@ -35,14 +35,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-#      - name: Make 'application.yml'
-#        if: contains(github.ref, 'develop')
-#        run: |
-#          cd ./src/main/resources
-#          touch ./application.yml
-#          echo "${{ secrets.APPLICATION_YML_DEV }}" > ./application.yml
-#          cat ./application.yml
-#        shell: bash
+      - name: Inject Resource Files
+        run: |
+          mkdir ./src/main/resources
+        shell: bash
+
+      - name: Make 'application.yml'
+#        if: contains(github.ref, 'main')
+        run: |
+          cd ./src/main/resources
+          touch ./application.yml
+          echo "${{ secrets.APPLICATION_YML_DEV }}" | base64 --decode > ./application.yml
+        shell: bash
+
+      - name: Make 'keystore.p12'
+        run: |
+          cd ./src/main/resources
+          touch ./keystore.p12
+          echo "${{ secrets.KEYSTORE }}" | base64 --decode > ./keystore.p12
+        shell: bash
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew

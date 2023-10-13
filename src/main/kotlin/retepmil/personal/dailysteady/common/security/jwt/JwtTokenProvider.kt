@@ -125,7 +125,7 @@ class JwtTokenProvider(
             .value(refreshTokenValue)
             .path("/")
             .maxAge(maxAgeSeconds)
-            .httpOnly(false) // 배포 환경에서는 true로 설정 필요
+            .httpOnly(true)
             .secure(true)
             .sameSite("None")
             .build()
@@ -133,7 +133,7 @@ class JwtTokenProvider(
         fun generateAccessTokenCookie(accessTokenValue: String): ResponseCookie = ResponseCookie.from("x-access-token")
             .value(accessTokenValue)
             .maxAge(expirationMiliseconds)
-            .httpOnly(false)
+            .httpOnly(true)
             .secure(true)
             .sameSite("None")
             .build()
