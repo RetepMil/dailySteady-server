@@ -1,13 +1,10 @@
 package retepmil.personal.dailysteady.common.security.controller
 
-import jakarta.servlet.ServletRequest
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.security.core.context.SecurityContext
-import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import retepmil.personal.dailysteady.common.dto.BaseResponseDto
 import retepmil.personal.dailysteady.common.dto.DataResponseDto
@@ -15,14 +12,13 @@ import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
 import retepmil.personal.dailysteady.members.dto.MemberCreateRequestDto
 import retepmil.personal.dailysteady.members.dto.MemberLoginRequestDto
 import retepmil.personal.dailysteady.members.dto.MemberLoginResponseDto
-import retepmil.personal.dailysteady.members.exception.MemberNotFoundException
 import retepmil.personal.dailysteady.members.service.MemberService
 import java.util.*
-import kotlin.math.log
 
 @RestController
 class AuthController(
     private val memberService: MemberService,
+    private val jwtTokenProvider: JwtTokenProvider,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(AuthController::class.java)
 
@@ -54,14 +50,15 @@ class AuthController(
         return DataResponseDto(200, responseDto)
     }
 
-    @PatchMapping("/member/authentication")
+    @PatchMapping("/token", headers = ["Authorization"])
     fun renewToken(
-        @CookieValue("refreshToken") refreshTokenValue: String,
+        @CookieValue("refreshToken") refreshToken: String,
+        @RequestHeader("Authorization") accessToken: String,
         response: HttpServletResponse,
     ): DataResponseDto<MemberLoginResponseDto> {
-        logger.debug("SecurityController -> renewAccessToken 함수 진입")
+        logger.debug("SecurityController -> renewToken 함수 진입")
 
-        val responseDto = memberService.tokenSignin(refreshTokenValue)
+        val responseDto = jwtTokenProvider.renewToken(accessToken, refreshToken)
 
         // 쿠키에 Access Token 주입
         val accessTokenCookie = JwtTokenProvider.generateAccessTokenCookie(responseDto.tokenInfo.accessToken)

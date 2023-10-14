@@ -3,14 +3,12 @@ package retepmil.personal.dailysteady.members.service
 import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
-import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import retepmil.personal.dailysteady.common.security.domain.MemberRole
 import retepmil.personal.dailysteady.common.security.domain.RefreshToken
-import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
 import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
 import retepmil.personal.dailysteady.common.security.repository.MemberRoleRepository
 import retepmil.personal.dailysteady.common.security.repository.RefreshTokenRepository
@@ -81,40 +79,9 @@ class MemberService(
         return MemberLoginResponseDto(member.email, member.name, tokenInfo)
     }
 
-    fun renewAccessToken(refreshTokenValue: String, authentication: Authentication): MemberLoginResponseDto {
-        logger.debug("Access Token 재발급 로직 수행")
-
-        val tokenInfo = jwtTokenProvider.createToken(authentication)
-        val newRefreshTokenValue = tokenInfo.refreshToken
-        val newRefreshToken = RefreshToken(null, authentication.name, newRefreshTokenValue)
-
-        refreshTokenRepository.update(authentication.name, newRefreshToken.refreshTokenValue)
-
-        val member = memberRepository.findByEmail(authentication.name)
-            ?: throw MemberNotFoundException()
-
-        return MemberLoginResponseDto(member.email, member.name, tokenInfo)
-    }
-
     fun getMemberInfo(email: String): MemberInfoVO {
         val member = memberRepository.findByEmail(email)
             ?: throw InvalidParameterException("존재하지 않는 멤버를 조회할 수 없습니다")
         return MemberInfoVO.from(member)
-    }
-
-    fun tokenSignin(accessTokenValue: String): MemberLoginResponseDto {
-        logger.debug("Access Token 재발급 로직 수행")
-        val authentication = jwtTokenProvider.getAuthentication(accessTokenValue)
-        val tokenInfo = jwtTokenProvider.createToken(authentication)
-
-        val newRefreshTokenValue = tokenInfo.refreshToken
-        val newRefreshToken = RefreshToken(null, authentication.name, newRefreshTokenValue)
-
-        refreshTokenRepository.update(authentication.name, newRefreshToken.refreshTokenValue)
-
-        val member = memberRepository.findByEmail(authentication.name)
-            ?: throw MemberNotFoundException()
-
-        return MemberLoginResponseDto(member.email, member.name, tokenInfo)
     }
 }

@@ -14,10 +14,15 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
-import retepmil.personal.dailysteady.common.security.domain.RefreshToken
+import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
+import retepmil.personal.dailysteady.common.security.exception.RefreshTokenNotFoundException
+import retepmil.personal.dailysteady.common.security.repository.MemberRoleRepository
 import retepmil.personal.dailysteady.common.security.repository.RefreshTokenRepository
+import retepmil.personal.dailysteady.members.dto.MemberLoginResponseDto
+import retepmil.personal.dailysteady.members.exception.MemberNotFoundException
+import retepmil.personal.dailysteady.members.repository.MemberRepository
 import java.util.*
+import javax.security.auth.RefreshFailedException
 
 const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 6L // 6 HOURS
 const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 24L * 7L // 7 DAYS
@@ -25,6 +30,8 @@ const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 24L * 7L //
 @Component
 class JwtTokenProvider(
     private val refreshTokenRepository: RefreshTokenRepository,
+    private val memberRepository: MemberRepository,
+    private val memberRoleRepository: MemberRoleRepository,
 ) {
 
     @Value("\${jwt.secret}")
@@ -36,9 +43,6 @@ class JwtTokenProvider(
 
     private val logger: Logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
 
-    /*
-     * Token 생성
-     */
     fun createToken(authentication: Authentication): TokenInfo {
         logger.debug("Token 생성 시작 : {}", authentication)
 
@@ -53,6 +57,36 @@ class JwtTokenProvider(
             logger.debug("accessToken : {}", it.accessToken)
             logger.debug("refreshToken : {}", it.refreshToken)
         }
+    }
+
+    fun renewToken(accessToken: String, refreshToken: String): MemberLoginResponseDto {
+        logger.debug("Token의 Refresh 시작")
+        val accessTokenValidation = validateToken(accessToken)
+        if (accessTokenValidation != JwtCode.ACCESS)
+            throw InvalidTokenException("Access Token 값에 문제가 있습니다")
+
+        val email = getClaims(accessToken).subject
+        val member = memberRepository.findByEmail(email)
+            ?: throw MemberNotFoundException()
+        val refreshTokenValidation = validateToken(refreshToken)
+        if (refreshTokenValidation != JwtCode.ACCESS)
+            throw InvalidTokenException("Refresh Token 값에 문제가 있습니다")
+
+        val storedRefreshToken = refreshTokenRepository.findByEmail(email)
+            ?: throw RefreshTokenNotFoundException()
+        if (refreshToken != storedRefreshToken.refreshTokenValue)
+            throw RefreshFailedException()
+
+        val memberRole = memberRoleRepository.findByMemberId(member.id!!)
+        val newAccessToken = generateAccessToken(email, memberRole.role.name)
+        val newRefreshToken = generateRefreshToken(email)
+        val tokenInfo = TokenInfo("Bearer", newAccessToken, newRefreshToken).also {
+            logger.debug("토큰 재발급 정보")
+            logger.debug("accessToken : {}", it.accessToken)
+            logger.debug("refreshToken : {}", it.refreshToken)
+        }
+
+        return MemberLoginResponseDto(member.email, member.name, tokenInfo)
     }
 
     private fun generateAccessToken(name: String, authorities: String): String {
@@ -92,10 +126,6 @@ class JwtTokenProvider(
 
         return UsernamePasswordAuthenticationToken(principal, "", authorities)
     }
-
-    @Transactional(readOnly = true)
-    fun getRefreshToken(identifier: String): RefreshToken =
-        refreshTokenRepository.findByEmail(identifier) ?: throw IllegalArgumentException()
 
     fun validateToken(token: String): JwtCode {
         return try {
