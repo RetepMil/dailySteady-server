@@ -19,9 +19,8 @@ import retepmil.personal.dailysteady.common.security.domain.RefreshToken
 import retepmil.personal.dailysteady.common.security.repository.RefreshTokenRepository
 import java.util.*
 
-const val expirationMiliseconds: Long = 1000L * 60L * 60L * 12L // 12시간
-
-const val maxAgeSeconds: Long = 1000L * 60L * 60L * 24L * 14L // 14 일
+const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 6L // 6 HOURS
+const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 24L * 7L // 7 DAYS
 
 @Component
 class JwtTokenProvider(
@@ -58,7 +57,7 @@ class JwtTokenProvider(
 
     private fun generateAccessToken(name: String, authorities: String): String {
         val now = Date()
-        val expireDate = Date(now.time + expirationMiliseconds)
+        val expireDate = Date(now.time + ACCESS_EXPIRATION_MILLISECOND)
         return Jwts.builder()
             .setSubject(name)
             .claim("auth", authorities)
@@ -70,9 +69,11 @@ class JwtTokenProvider(
 
     private fun generateRefreshToken(name: String): String {
         val now = Date()
+        val expireDate = Date(now.time + REFRESH_EXPIRATION_MILLISECOND)
         return Jwts.builder()
             .setSubject(name)
             .setIssuedAt(now)
+            .setExpiration(expireDate)
             .signWith(key, SignatureAlgorithm.HS256)
             .compact()
     }
@@ -92,7 +93,7 @@ class JwtTokenProvider(
         return UsernamePasswordAuthenticationToken(principal, "", authorities)
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     fun getRefreshToken(identifier: String): RefreshToken =
         refreshTokenRepository.findByEmail(identifier) ?: throw IllegalArgumentException()
 
@@ -124,7 +125,7 @@ class JwtTokenProvider(
         fun generateRefreshTokenCookie(refreshTokenValue: String): ResponseCookie = ResponseCookie.from("refreshToken")
             .value(refreshTokenValue)
             .path("/")
-            .maxAge(maxAgeSeconds)
+            .maxAge(REFRESH_EXPIRATION_MILLISECOND)
             .httpOnly(true)
             .secure(true)
             .sameSite("None")
@@ -132,7 +133,7 @@ class JwtTokenProvider(
 
         fun generateAccessTokenCookie(accessTokenValue: String): ResponseCookie = ResponseCookie.from("x-access-token")
             .value(accessTokenValue)
-            .maxAge(expirationMiliseconds)
+            .maxAge(ACCESS_EXPIRATION_MILLISECOND)
             .httpOnly(true)
             .secure(true)
             .sameSite("None")

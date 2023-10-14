@@ -1,6 +1,8 @@
 ### General ###
 .gradle
 build/
+log/
+*.log
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

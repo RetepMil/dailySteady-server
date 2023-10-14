@@ -51,8 +51,8 @@ class MemberService(
         logger.debug("로그인 서비스 로직 시작")
 
         var authentication = SecurityContextHolder.getContext().authentication
-        if (request.isTokenSignin() && authentication.principal == "anonymousUser")
-            throw InvalidTokenException()
+//        if (request.isTokenSignin() && authentication.principal == "anonymousUser")
+//            throw InvalidTokenException("")
 
         if (!request.isTokenSignin()) {
             val authenticationToken = UsernamePasswordAuthenticationToken(request.email, request.password)
