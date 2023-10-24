@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import retepmil.personal.dailysteady.common.security.domain.MemberRole
 import retepmil.personal.dailysteady.common.security.domain.RefreshToken
+import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
 import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
 import retepmil.personal.dailysteady.common.security.repository.MemberRoleRepository
 import retepmil.personal.dailysteady.common.security.repository.RefreshTokenRepository
@@ -49,8 +50,8 @@ class MemberService(
         logger.debug("로그인 서비스 로직 시작")
 
         var authentication = SecurityContextHolder.getContext().authentication
-//        if (request.isTokenSignin() && authentication.principal == "anonymousUser")
-//            throw InvalidTokenException("")
+        if (request.isTokenSignin() && authentication.principal == "anonymousUser")
+            throw InvalidTokenException("토큰 값이 주어지지 않았습니다")
 
         if (!request.isTokenSignin()) {
             val authenticationToken = UsernamePasswordAuthenticationToken(request.email, request.password)
@@ -58,6 +59,8 @@ class MemberService(
             SecurityContextHolder.getContext().authentication = authentication
             logger.debug("아이디/패스워드 로그인 성공")
         } else logger.debug("토큰 로그인 성공")
+
+        logger.debug("{}", authentication)
 
         val email = authentication.name
         val member = memberRepository.findByEmail(email)

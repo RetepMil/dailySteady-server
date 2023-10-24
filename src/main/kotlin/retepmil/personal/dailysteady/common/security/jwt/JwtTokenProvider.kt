@@ -24,8 +24,11 @@ import retepmil.personal.dailysteady.members.repository.MemberRepository
 import java.util.*
 import javax.security.auth.RefreshFailedException
 
-const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 6L // 6 HOURS
-const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 24L * 7L // 7 DAYS
+//const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 6L // 6 HOURS
+//const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 24L * 7L // 7 DAYS
+
+const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 5L // 5 Seconds
+const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L // 1 Minute
 
 @Component
 class JwtTokenProvider(
@@ -60,22 +63,20 @@ class JwtTokenProvider(
     }
 
     fun renewToken(accessToken: String, refreshToken: String): MemberLoginResponseDto {
-        logger.debug("Token의 Refresh 시작")
-        val accessTokenValidation = validateToken(accessToken)
-        if (accessTokenValidation != JwtCode.ACCESS)
-            throw InvalidTokenException("Access Token 값에 문제가 있습니다")
+        logger.debug("Token Renew 로직 시작")
+
+        if (validateToken(accessToken) != JwtCode.EXPIRED)
+            throw InvalidTokenException("Access Token 값이 EXPIRED 상태가 아닙니다")
+        if (validateToken(refreshToken) != JwtCode.EXPIRED)
+            throw InvalidTokenException("Refresh Token 값이 EXPIRED 상태가 아닙니다")
 
         val email = getClaims(accessToken).subject
-        val member = memberRepository.findByEmail(email)
-            ?: throw MemberNotFoundException()
-        val refreshTokenValidation = validateToken(refreshToken)
-        if (refreshTokenValidation != JwtCode.ACCESS)
-            throw InvalidTokenException("Refresh Token 값에 문제가 있습니다")
+        val member = memberRepository.findByEmail(email) ?: throw MemberNotFoundException()
 
         val storedRefreshToken = refreshTokenRepository.findByEmail(email)
             ?: throw RefreshTokenNotFoundException()
         if (refreshToken != storedRefreshToken.refreshTokenValue)
-            throw RefreshFailedException()
+            throw RefreshFailedException("전달받은 Refresh Token 값이 DB에 저장되어 있는 값과 상이합니다")
 
         val memberRole = memberRoleRepository.findByMemberId(member.id!!)
         val newAccessToken = generateAccessToken(email, memberRole.role.name)
@@ -86,12 +87,16 @@ class JwtTokenProvider(
             logger.debug("refreshToken : {}", it.refreshToken)
         }
 
+        // 새로운 Refresh Token 정보를 DB에 저장
+        refreshTokenRepository.update(email, newRefreshToken)
+
         return MemberLoginResponseDto(member.email, member.name, tokenInfo)
     }
 
     private fun generateAccessToken(name: String, authorities: String): String {
         val now = Date()
         val expireDate = Date(now.time + ACCESS_EXPIRATION_MILLISECOND)
+        logger.debug("Access Token Expires : {}", expireDate)
         return Jwts.builder()
             .setSubject(name)
             .claim("auth", authorities)
@@ -104,6 +109,7 @@ class JwtTokenProvider(
     private fun generateRefreshToken(name: String): String {
         val now = Date()
         val expireDate = Date(now.time + REFRESH_EXPIRATION_MILLISECOND)
+        logger.debug("Refresh Token Expires : {}", expireDate)
         return Jwts.builder()
             .setSubject(name)
             .setIssuedAt(now)
@@ -134,11 +140,11 @@ class JwtTokenProvider(
         } catch (e: Exception) {
             logger.error(e.message)
             when(e) {
-                is SecurityException -> JwtCode.SECURITY_ERROR // Invalid JWT Token
-                is MalformedJwtException -> JwtCode.MALFORMED // Invalid JWT Token
-                is ExpiredJwtException -> JwtCode.EXPIRED // Expired JWT Token
-                is UnsupportedJwtException -> JwtCode.UNSUPPORTED // Unsupported JWT Token
-                is IllegalArgumentException -> JwtCode.ILLEGAL_ARGUMENT // JWT claims string is empty
+                is SecurityException -> JwtCode.SECURITY_ERROR
+                is MalformedJwtException -> JwtCode.MALFORMED
+                is ExpiredJwtException -> JwtCode.EXPIRED
+                is UnsupportedJwtException -> JwtCode.UNSUPPORTED
+                is IllegalArgumentException -> JwtCode.ILLEGAL_ARGUMENT
                 else -> JwtCode.UNKNOWN
             }
         }

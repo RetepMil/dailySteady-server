@@ -24,21 +24,18 @@ class JwtAuthenticationFilter(
         }
 
         logger.debug("JWT 필터 로직 실행")
-
         val token = resolveAccessToken(httpRequest)
-        if (token != null) {
-            when (jwtTokenProvider.validateToken(token)) {
-                JwtCode.ACCESS -> {
-                    val authentication = jwtTokenProvider.getAuthentication(token)
-                    SecurityContextHolder.getContext().authentication = authentication
-                }
-                JwtCode.EXPIRED -> throw InvalidTokenException("토큰이 만료되었습니다")
-                JwtCode.SECURITY_ERROR -> throw InvalidTokenException("토큰에 보안 관련 문제가 있습니다")
-                JwtCode.MALFORMED -> throw InvalidTokenException("토큰에 문제가 있습니다")
-                JwtCode.UNSUPPORTED -> throw InvalidTokenException("시스템에서 허용하는 토큰 스펙이 아닙니다")
-                JwtCode.ILLEGAL_ARGUMENT -> throw InvalidTokenException("토큰 내용이 없습니다")
-                else -> throw ServletException("예기치 못한 문제가 발생했습니다")
+        if (token != null) when (jwtTokenProvider.validateToken(token)) {
+            JwtCode.ACCESS -> {
+                val authentication = jwtTokenProvider.getAuthentication(token)
+                SecurityContextHolder.getContext().authentication = authentication
             }
+            JwtCode.EXPIRED -> throw InvalidTokenException("토큰이 만료되었습니다")
+            JwtCode.SECURITY_ERROR -> throw InvalidTokenException("토큰에 보안 관련 문제가 있습니다")
+            JwtCode.MALFORMED -> throw InvalidTokenException("토큰에 문제가 있습니다")
+            JwtCode.UNSUPPORTED -> throw InvalidTokenException("시스템에서 허용하는 토큰 스펙이 아닙니다")
+            JwtCode.ILLEGAL_ARGUMENT -> throw InvalidTokenException("토큰 내용이 없습니다")
+            else -> throw ServletException("예기치 못한 문제가 발생했습니다")
         }
 
         chain?.doFilter(request, response)

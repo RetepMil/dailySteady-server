@@ -1,3 +1,3 @@
 package retepmil.personal.dailysteady.members.exception
 
-class MemberNotFoundException : RuntimeException("주어진 조건의 멤버가 존재하지 않습니다")
+class MemberNotFoundException : RuntimeException("주어진 조건으로 멤버를 찾을 수 없습니다")

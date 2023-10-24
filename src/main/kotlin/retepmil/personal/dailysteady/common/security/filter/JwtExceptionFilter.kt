@@ -22,7 +22,8 @@ class JwtExceptionFilter : OncePerRequestFilter() {
         response.apply {
             contentType = "application/json"
             characterEncoding = "utf-8"
-            status = if (ex is InvalidTokenException) HttpStatus.BAD_REQUEST.value() else HttpStatus.INTERNAL_SERVER_ERROR.value()
+            status = if (ex is InvalidTokenException) HttpStatus.BAD_REQUEST.value()
+                else HttpStatus.INTERNAL_SERVER_ERROR.value()
             writer.print(ex.message)
         }
 }

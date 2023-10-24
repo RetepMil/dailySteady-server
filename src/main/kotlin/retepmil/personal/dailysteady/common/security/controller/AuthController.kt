@@ -50,13 +50,16 @@ class AuthController(
         return DataResponseDto(200, responseDto)
     }
 
-    @PatchMapping("/token", headers = ["Authorization"])
+    @PatchMapping("/token")
     fun renewToken(
         @CookieValue("refreshToken") refreshToken: String,
-        @RequestHeader("Authorization") accessToken: String,
+        @CookieValue("x-access-token") accessToken: String,
         response: HttpServletResponse,
     ): DataResponseDto<MemberLoginResponseDto> {
         logger.debug("SecurityController -> renewToken 함수 진입")
+
+        logger.debug("{} ||", refreshToken)
+        logger.debug("{} ||", accessToken)
 
         val responseDto = jwtTokenProvider.renewToken(accessToken, refreshToken)
 
