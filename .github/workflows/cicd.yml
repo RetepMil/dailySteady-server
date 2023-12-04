@@ -45,7 +45,7 @@ jobs:
         run: |
           cd ./src/main/resources
           touch ./application.yml
-          echo "${{ secrets.APPLICATION_YML_DEV }}" | base64 --decode > ./application.yml
+          echo "${{ secrets.APPLICATION_YML }}" | base64 --decode > ./application.yml
         shell: bash
 
       - name: Make 'keystore.p12'
