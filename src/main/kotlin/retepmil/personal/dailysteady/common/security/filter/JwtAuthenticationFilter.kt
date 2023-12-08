@@ -29,6 +29,7 @@ class JwtAuthenticationFilter(
             JwtCode.ACCESS -> {
                 val authentication = jwtTokenProvider.getAuthentication(token)
                 SecurityContextHolder.getContext().authentication = authentication
+                request.setAttribute("authentication", authentication)
             }
             JwtCode.EXPIRED -> throw InvalidTokenException("토큰이 만료되었습니다")
             JwtCode.SECURITY_ERROR -> throw InvalidTokenException("토큰에 보안 관련 문제가 있습니다")

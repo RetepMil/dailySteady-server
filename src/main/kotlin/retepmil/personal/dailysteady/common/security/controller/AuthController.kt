@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import retepmil.personal.dailysteady.common.dto.BaseResponseDto
 import retepmil.personal.dailysteady.common.dto.DataResponseDto
@@ -13,7 +14,6 @@ import retepmil.personal.dailysteady.members.dto.MemberCreateRequestDto
 import retepmil.personal.dailysteady.members.dto.MemberLoginRequestDto
 import retepmil.personal.dailysteady.members.dto.MemberLoginResponseDto
 import retepmil.personal.dailysteady.members.service.MemberService
-import java.util.*
 
 @RestController
 class AuthController(
@@ -34,8 +34,14 @@ class AuthController(
         @RequestBody @Valid requestDto: MemberLoginRequestDto,
         request: HttpServletRequest,
         response: HttpServletResponse,
-    ): DataResponseDto<MemberLoginResponseDto> {
+    ): DataResponseDto<*> {
         logger.debug("SecurityController -> signin 함수 진입 :: 파라미터 : {}", requestDto)
+
+        val authInfo = request.getAttribute("authentication") as Authentication?
+        if (authInfo != null) {
+            logger.debug("Already Logged In :: {}", authInfo)
+            return DataResponseDto(200, "이미 인증된 사용자")
+        }
 
         val responseDto = memberService.signin(requestDto)
 
