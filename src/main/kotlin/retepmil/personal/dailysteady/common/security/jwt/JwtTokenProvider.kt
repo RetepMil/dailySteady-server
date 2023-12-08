@@ -24,11 +24,8 @@ import retepmil.personal.dailysteady.members.repository.MemberRepository
 import java.util.*
 import javax.security.auth.RefreshFailedException
 
-//const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 6L // 6 HOURS
-//const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 24L * 7L // 7 DAYS
-
-const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 5L // 5 Seconds
-const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L // 1 Minute
+const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 24L // 24 HOURS
+const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 24L * 7L // 7 DAYS
 
 @Component
 class JwtTokenProvider(
