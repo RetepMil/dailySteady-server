@@ -5,4 +5,6 @@ import org.springframework.stereotype.Repository
 import retepmil.personal.dailysteady.common.security.domain.MemberRole
 
 @Repository
-interface MemberRoleRepository : JpaRepository<MemberRole, Long>
+interface MemberRoleRepository : JpaRepository<MemberRole, Long> {
+    fun findByMemberId(memberId: Long): MemberRole
+}

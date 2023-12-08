@@ -11,7 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.web.cors.CorsUtils
-import retepmil.personal.dailysteady.common.security.jwt.JwtAuthenticationFilter
+import retepmil.personal.dailysteady.common.security.filter.JwtAuthenticationFilter
+import retepmil.personal.dailysteady.common.security.filter.JwtExceptionFilter
 import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
 
 @Configuration
@@ -38,15 +39,20 @@ class SecurityConfig(
                 request
                     .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
                     .requestMatchers("/signin", "/signup", "/health").permitAll()
-                    .requestMatchers("/member").hasRole("MEMBER")
-                    // .requestMatchers("/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/member").hasAnyRole("MEMBER", "ADMIN")
+                    .requestMatchers("/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
             }
 
-            // JwtAuthentication을 진행하기 전에 UsernamePasswordAuthenticationFilter를 실행하도록 설정
+            // JwtAuthenticationFilter를 UsernamePasswordAuthenticationFilter 전에 수행
             .addFilterBefore(
                 JwtAuthenticationFilter(jwtTokenProvider),
                 UsernamePasswordAuthenticationFilter::class.java
+            )
+            // Jwt 인증 관련 오류 처리를 위한 필터 추가
+            .addFilterBefore(
+                JwtExceptionFilter(),
+                JwtAuthenticationFilter::class.java
             )
 
             // SecurityFilterChain 객체 반환

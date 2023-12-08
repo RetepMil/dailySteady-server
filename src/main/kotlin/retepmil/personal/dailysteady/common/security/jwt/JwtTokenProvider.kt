@@ -14,18 +14,27 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
-import retepmil.personal.dailysteady.common.security.domain.RefreshToken
+import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
+import retepmil.personal.dailysteady.common.security.exception.RefreshTokenNotFoundException
+import retepmil.personal.dailysteady.common.security.repository.MemberRoleRepository
 import retepmil.personal.dailysteady.common.security.repository.RefreshTokenRepository
+import retepmil.personal.dailysteady.members.dto.MemberLoginResponseDto
+import retepmil.personal.dailysteady.members.exception.MemberNotFoundException
+import retepmil.personal.dailysteady.members.repository.MemberRepository
 import java.util.*
+import javax.security.auth.RefreshFailedException
 
-const val expirationMiliseconds: Long = 1000L * 60L * 60L * 12L // 12시간
+//const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 6L // 6 HOURS
+//const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L * 60L * 24L * 7L // 7 DAYS
 
-const val maxAgeSeconds: Long = 1000L * 60L * 60L * 24L * 14L // 14 일
+const val ACCESS_EXPIRATION_MILLISECOND: Long = 1000L * 5L // 5 Seconds
+const val REFRESH_EXPIRATION_MILLISECOND: Long = 1000L * 60L // 1 Minute
 
 @Component
 class JwtTokenProvider(
     private val refreshTokenRepository: RefreshTokenRepository,
+    private val memberRepository: MemberRepository,
+    private val memberRoleRepository: MemberRoleRepository,
 ) {
 
     @Value("\${jwt.secret}")
@@ -37,9 +46,6 @@ class JwtTokenProvider(
 
     private val logger: Logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
 
-    /*
-     * Token 생성
-     */
     fun createToken(authentication: Authentication): TokenInfo {
         logger.debug("Token 생성 시작 : {}", authentication)
 
@@ -56,9 +62,41 @@ class JwtTokenProvider(
         }
     }
 
+    fun renewToken(accessToken: String, refreshToken: String): MemberLoginResponseDto {
+        logger.debug("Token Renew 로직 시작")
+
+        if (validateToken(accessToken) != JwtCode.EXPIRED)
+            throw InvalidTokenException("Access Token 값이 EXPIRED 상태가 아닙니다")
+        if (validateToken(refreshToken) != JwtCode.EXPIRED)
+            throw InvalidTokenException("Refresh Token 값이 EXPIRED 상태가 아닙니다")
+
+        val email = getClaims(accessToken).subject
+        val member = memberRepository.findByEmail(email) ?: throw MemberNotFoundException()
+
+        val storedRefreshToken = refreshTokenRepository.findByEmail(email)
+            ?: throw RefreshTokenNotFoundException()
+        if (refreshToken != storedRefreshToken.refreshTokenValue)
+            throw RefreshFailedException("전달받은 Refresh Token 값이 DB에 저장되어 있는 값과 상이합니다")
+
+        val memberRole = memberRoleRepository.findByMemberId(member.id!!)
+        val newAccessToken = generateAccessToken(email, memberRole.role.name)
+        val newRefreshToken = generateRefreshToken(email)
+        val tokenInfo = TokenInfo("Bearer", newAccessToken, newRefreshToken).also {
+            logger.debug("토큰 재발급 정보")
+            logger.debug("accessToken : {}", it.accessToken)
+            logger.debug("refreshToken : {}", it.refreshToken)
+        }
+
+        // 새로운 Refresh Token 정보를 DB에 저장
+        refreshTokenRepository.update(email, newRefreshToken)
+
+        return MemberLoginResponseDto(member.email, member.name, tokenInfo)
+    }
+
     private fun generateAccessToken(name: String, authorities: String): String {
         val now = Date()
-        val expireDate = Date(now.time + expirationMiliseconds)
+        val expireDate = Date(now.time + ACCESS_EXPIRATION_MILLISECOND)
+        logger.debug("Access Token Expires : {}", expireDate)
         return Jwts.builder()
             .setSubject(name)
             .claim("auth", authorities)
@@ -70,9 +108,12 @@ class JwtTokenProvider(
 
     private fun generateRefreshToken(name: String): String {
         val now = Date()
+        val expireDate = Date(now.time + REFRESH_EXPIRATION_MILLISECOND)
+        logger.debug("Refresh Token Expires : {}", expireDate)
         return Jwts.builder()
             .setSubject(name)
             .setIssuedAt(now)
+            .setExpiration(expireDate)
             .signWith(key, SignatureAlgorithm.HS256)
             .compact()
     }
@@ -92,10 +133,6 @@ class JwtTokenProvider(
         return UsernamePasswordAuthenticationToken(principal, "", authorities)
     }
 
-    @Transactional
-    fun getRefreshToken(identifier: String): RefreshToken =
-        refreshTokenRepository.findByEmail(identifier) ?: throw IllegalArgumentException()
-
     fun validateToken(token: String): JwtCode {
         return try {
             getClaims(token)
@@ -103,11 +140,11 @@ class JwtTokenProvider(
         } catch (e: Exception) {
             logger.error(e.message)
             when(e) {
-                is SecurityException -> JwtCode.SECURITY_ERROR // Invalid JWT Token
-                is MalformedJwtException -> JwtCode.MALFORMED // Invalid JWT Token
-                is ExpiredJwtException -> JwtCode.EXPIRED // Expired JWT Token
-                is UnsupportedJwtException -> JwtCode.UNSUPPORTED // Unsupported JWT Token
-                is IllegalArgumentException -> JwtCode.ILLEGAL_ARGUMENT // JWT claims string is empty
+                is SecurityException -> JwtCode.SECURITY_ERROR
+                is MalformedJwtException -> JwtCode.MALFORMED
+                is ExpiredJwtException -> JwtCode.EXPIRED
+                is UnsupportedJwtException -> JwtCode.UNSUPPORTED
+                is IllegalArgumentException -> JwtCode.ILLEGAL_ARGUMENT
                 else -> JwtCode.UNKNOWN
             }
         }
@@ -124,7 +161,7 @@ class JwtTokenProvider(
         fun generateRefreshTokenCookie(refreshTokenValue: String): ResponseCookie = ResponseCookie.from("refreshToken")
             .value(refreshTokenValue)
             .path("/")
-            .maxAge(maxAgeSeconds)
+            .maxAge(REFRESH_EXPIRATION_MILLISECOND)
             .httpOnly(true)
             .secure(true)
             .sameSite("None")
@@ -132,7 +169,7 @@ class JwtTokenProvider(
 
         fun generateAccessTokenCookie(accessTokenValue: String): ResponseCookie = ResponseCookie.from("x-access-token")
             .value(accessTokenValue)
-            .maxAge(expirationMiliseconds)
+            .maxAge(ACCESS_EXPIRATION_MILLISECOND)
             .httpOnly(true)
             .secure(true)
             .sameSite("None")

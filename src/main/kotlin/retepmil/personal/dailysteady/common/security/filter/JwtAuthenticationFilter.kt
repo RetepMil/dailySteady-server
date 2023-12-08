@@ -1,21 +1,21 @@
-package retepmil.personal.dailysteady.common.security.jwt
+package retepmil.personal.dailysteady.common.security.filter
 
 import jakarta.servlet.FilterChain
+import jakarta.servlet.ServletException
 import jakarta.servlet.ServletRequest
 import jakarta.servlet.ServletResponse
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
-import org.springframework.http.HttpHeaders
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.util.StringUtils
 import org.springframework.web.filter.GenericFilterBean
 import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
+import retepmil.personal.dailysteady.common.security.jwt.JwtCode
+import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
 
 class JwtAuthenticationFilter(
     private val jwtTokenProvider: JwtTokenProvider,
 ) : GenericFilterBean() {
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain?) {
-        logger.debug("JWT 필터 로직 실행")
         val httpRequest = request as HttpServletRequest
 
         if (httpRequest.requestURI == "/health") {
@@ -23,26 +23,22 @@ class JwtAuthenticationFilter(
             return
         }
 
-        // HttpServletRequest의 accessToken 값에 대한 검증을 실시
+        logger.debug("JWT 필터 로직 실행")
         val token = resolveAccessToken(httpRequest)
-        if (token != null && jwtTokenProvider.validateToken(token) == JwtCode.ACCESS) {
-            val authentication = jwtTokenProvider.getAuthentication(token)
-            SecurityContextHolder.getContext().authentication = authentication
-        } else if (token != null && jwtTokenProvider.validateToken(token) == JwtCode.EXPIRED) {
-            logger.debug("Access Token 유효기간 만료")
-            val email = request.getHeader("Authorization")
-            val givenRefreshTokenValue = request.cookies.filter { it.name == "refreshToken" }[0].value
-            val storedRefreshToken = jwtTokenProvider.getRefreshToken(email)
-            if (givenRefreshTokenValue != storedRefreshToken.refreshTokenValue)
-                throw InvalidTokenException()
-            if (jwtTokenProvider.validateToken(givenRefreshTokenValue) == JwtCode.ACCESS) {
-                logger.debug("Refresh Token 유효, Access Token 재발급")
+        if (token != null) when (jwtTokenProvider.validateToken(token)) {
+            JwtCode.ACCESS -> {
                 val authentication = jwtTokenProvider.getAuthentication(token)
-                val newToken = jwtTokenProvider.createToken(authentication)
                 SecurityContextHolder.getContext().authentication = authentication
-                (response as HttpServletResponse).setHeader(HttpHeaders.AUTHORIZATION, newToken.accessToken)
+                request.setAttribute("authentication", authentication)
             }
+            JwtCode.EXPIRED -> throw InvalidTokenException("토큰이 만료되었습니다")
+            JwtCode.SECURITY_ERROR -> throw InvalidTokenException("토큰에 보안 관련 문제가 있습니다")
+            JwtCode.MALFORMED -> throw InvalidTokenException("토큰에 문제가 있습니다")
+            JwtCode.UNSUPPORTED -> throw InvalidTokenException("시스템에서 허용하는 토큰 스펙이 아닙니다")
+            JwtCode.ILLEGAL_ARGUMENT -> throw InvalidTokenException("토큰 내용이 없습니다")
+            else -> throw ServletException("예기치 못한 문제가 발생했습니다")
         }
+
         chain?.doFilter(request, response)
     }
 
