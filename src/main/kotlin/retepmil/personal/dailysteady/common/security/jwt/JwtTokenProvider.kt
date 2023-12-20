@@ -14,7 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
-import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
+import retepmil.personal.dailysteady.common.security.exception.RefreshTokenExpiredException
 import retepmil.personal.dailysteady.common.security.exception.RefreshTokenNotFoundException
 import retepmil.personal.dailysteady.common.security.repository.MemberRoleRepository
 import retepmil.personal.dailysteady.common.security.repository.RefreshTokenRepository
@@ -62,10 +62,8 @@ class JwtTokenProvider(
     fun renewToken(accessToken: String, refreshToken: String): MemberLoginResponseDto {
         logger.debug("Token Renew 로직 시작")
 
-        if (validateToken(accessToken) != JwtCode.EXPIRED)
-            throw InvalidTokenException("Access Token 값이 EXPIRED 상태가 아닙니다")
-        if (validateToken(refreshToken) != JwtCode.EXPIRED)
-            throw InvalidTokenException("Refresh Token 값이 EXPIRED 상태가 아닙니다")
+        if (validateToken(refreshToken) == JwtCode.EXPIRED)
+            throw RefreshTokenExpiredException()
 
         val email = getClaims(accessToken).subject
         val member = memberRepository.findByEmail(email) ?: throw MemberNotFoundException()
@@ -170,6 +168,16 @@ class JwtTokenProvider(
             .httpOnly(true)
             .secure(true)
             .sameSite("None")
+            .build()
+
+        fun generateRefreshTokenDeleteCookie() = ResponseCookie.from("refreshToken")
+            .value("")
+            .maxAge(0)
+            .build()
+
+        fun generateAccessTokenDeleteCookie() = ResponseCookie.from("x-access-token")
+            .value("")
+            .maxAge(0)
             .build()
     }
 }

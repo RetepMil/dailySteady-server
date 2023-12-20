@@ -5,6 +5,7 @@ on:
       - "develop"
       - "main"
       - "infra/**"
+      - "modify/**"
   pull_request:
     branches:
       - "develop"

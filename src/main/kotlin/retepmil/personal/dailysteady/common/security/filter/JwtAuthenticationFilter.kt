@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException
 import jakarta.servlet.ServletRequest
 import jakarta.servlet.ServletResponse
 import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.util.StringUtils
 import org.springframework.web.filter.GenericFilterBean
@@ -17,6 +18,7 @@ class JwtAuthenticationFilter(
 ) : GenericFilterBean() {
     override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain?) {
         val httpRequest = request as HttpServletRequest
+        val httpResponse = response as HttpServletResponse
 
         if (httpRequest.requestURI == "/health") {
             chain?.doFilter(request, response)
@@ -24,14 +26,35 @@ class JwtAuthenticationFilter(
         }
 
         logger.debug("JWT 필터 로직 실행")
-        val token = resolveAccessToken(httpRequest)
-        if (token != null) when (jwtTokenProvider.validateToken(token)) {
+        val accessToken = resolveAccessToken(httpRequest)
+        if (accessToken != null) when (jwtTokenProvider.validateToken(accessToken)) {
             JwtCode.ACCESS -> {
-                val authentication = jwtTokenProvider.getAuthentication(token)
+                val authentication = jwtTokenProvider.getAuthentication(accessToken)
                 SecurityContextHolder.getContext().authentication = authentication
                 request.setAttribute("authentication", authentication)
             }
-            JwtCode.EXPIRED -> throw InvalidTokenException("토큰이 만료되었습니다")
+            JwtCode.EXPIRED -> {
+                logger.debug("액세스 토큰이 만료되었습니다. 갱신을 시도합니다.")
+                val refreshToken = request.cookies.find { it.name == "refreshToken" }?.value
+                    ?: throw InvalidTokenException("refresh token이 존재하지 않습니다")
+                // 액세스 토큰 갱신 작업을 진행
+                jwtTokenProvider.renewToken(accessToken, refreshToken)
+                    .runCatching {
+                        httpResponse.addHeader("Set-Cookie",
+                            JwtTokenProvider.generateAccessTokenCookie(this.tokenInfo.accessToken).toString())
+                        httpResponse.addHeader("Set-Cookie",
+                            JwtTokenProvider.generateRefreshTokenCookie(this.tokenInfo.refreshToken).toString())
+                        logger.debug("토큰 쌍 갱신 완료")
+                    }
+                    .onFailure {
+                        httpResponse.addHeader("Set-Cookie",
+                            JwtTokenProvider.generateAccessTokenDeleteCookie().toString())
+                        httpResponse.addHeader("Set-Cookie",
+                            JwtTokenProvider.generateRefreshTokenDeleteCookie().toString())
+                        logger.debug("토큰 쌍 삭제 완료")
+                        throw InvalidTokenException("토큰 갱신 단계에서 오류가 발생했습니다")
+                    }
+            }
             JwtCode.SECURITY_ERROR -> throw InvalidTokenException("토큰에 보안 관련 문제가 있습니다")
             JwtCode.MALFORMED -> throw InvalidTokenException("토큰에 문제가 있습니다")
             JwtCode.UNSUPPORTED -> throw InvalidTokenException("시스템에서 허용하는 토큰 스펙이 아닙니다")
