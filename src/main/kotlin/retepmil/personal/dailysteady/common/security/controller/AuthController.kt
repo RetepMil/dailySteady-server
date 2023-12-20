@@ -6,19 +6,19 @@ import jakarta.validation.Valid
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.security.core.Authentication
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RestController
 import retepmil.personal.dailysteady.common.dto.BaseResponseDto
 import retepmil.personal.dailysteady.common.dto.DataResponseDto
 import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
 import retepmil.personal.dailysteady.members.dto.MemberCreateRequestDto
 import retepmil.personal.dailysteady.members.dto.MemberLoginRequestDto
-import retepmil.personal.dailysteady.members.dto.MemberLoginResponseDto
 import retepmil.personal.dailysteady.members.service.MemberService
 
 @RestController
 class AuthController(
     private val memberService: MemberService,
-    private val jwtTokenProvider: JwtTokenProvider,
 ) {
     private val logger: Logger = LoggerFactory.getLogger(AuthController::class.java)
 
@@ -44,30 +44,6 @@ class AuthController(
         }
 
         val responseDto = memberService.signin(requestDto)
-
-        // 쿠키에 Access Token 주입
-        val accessTokenCookie = JwtTokenProvider.generateAccessTokenCookie(responseDto.tokenInfo.accessToken)
-        response.addHeader("Set-Cookie", accessTokenCookie.toString())
-
-        // 쿠키에 Refresh Token 주입
-        val refreshTokenCookie = JwtTokenProvider.generateRefreshTokenCookie(responseDto.tokenInfo.refreshToken)
-        response.addHeader("Set-Cookie", refreshTokenCookie.toString())
-
-        return DataResponseDto(200, responseDto)
-    }
-
-    @PatchMapping("/token")
-    fun renewToken(
-        @CookieValue("refreshToken") refreshToken: String,
-        @CookieValue("x-access-token") accessToken: String,
-        response: HttpServletResponse,
-    ): DataResponseDto<MemberLoginResponseDto> {
-        logger.debug("SecurityController -> renewToken 함수 진입")
-
-        logger.debug("{} ||", refreshToken)
-        logger.debug("{} ||", accessToken)
-
-        val responseDto = jwtTokenProvider.renewToken(accessToken, refreshToken)
 
         // 쿠키에 Access Token 주입
         val accessTokenCookie = JwtTokenProvider.generateAccessTokenCookie(responseDto.tokenInfo.accessToken)
