@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.util.StringUtils
 import org.springframework.web.filter.GenericFilterBean
 import retepmil.personal.dailysteady.common.security.exception.InvalidTokenException
+import retepmil.personal.dailysteady.common.security.exception.RefreshTokenExpiredException
 import retepmil.personal.dailysteady.common.security.jwt.JwtCode
 import retepmil.personal.dailysteady.common.security.jwt.JwtTokenProvider
 
@@ -37,23 +38,22 @@ class JwtAuthenticationFilter(
                 logger.debug("액세스 토큰이 만료되었습니다. 갱신을 시도합니다.")
                 val refreshToken = request.cookies.find { it.name == "refreshToken" }?.value
                     ?: throw InvalidTokenException("refresh token이 존재하지 않습니다")
+
                 // 액세스 토큰 갱신 작업을 진행
-                jwtTokenProvider.renewToken(accessToken, refreshToken)
-                    .runCatching {
-                        httpResponse.addHeader("Set-Cookie",
-                            JwtTokenProvider.generateAccessTokenCookie(this.tokenInfo.accessToken).toString())
-                        httpResponse.addHeader("Set-Cookie",
-                            JwtTokenProvider.generateRefreshTokenCookie(this.tokenInfo.refreshToken).toString())
-                        logger.debug("토큰 쌍 갱신 완료")
-                    }
-                    .onFailure {
-                        httpResponse.addHeader("Set-Cookie",
-                            JwtTokenProvider.generateAccessTokenDeleteCookie().toString())
-                        httpResponse.addHeader("Set-Cookie",
-                            JwtTokenProvider.generateRefreshTokenDeleteCookie().toString())
-                        logger.debug("토큰 쌍 삭제 완료")
-                        throw InvalidTokenException("토큰 갱신 단계에서 오류가 발생했습니다")
-                    }
+                try {
+                    logger.debug("토큰 쌍 갱신 시도")
+                    val dto = jwtTokenProvider.renewToken(accessToken, refreshToken)
+                    httpResponse.addHeader("Set-Cookie",
+                        JwtTokenProvider.generateAccessTokenCookie(dto.tokenInfo.accessToken).toString())
+                    httpResponse.addHeader("Set-Cookie",
+                        JwtTokenProvider.generateRefreshTokenCookie(dto.tokenInfo.refreshToken).toString())
+                } catch (e: RefreshTokenExpiredException) {
+                    logger.debug("토큰 쌍 삭제 시도")
+                    request.cookies.forEach { response.addCookie(it.apply { maxAge = 0 }) }
+                } catch (e: Exception) {
+                    throw InvalidTokenException("토큰 갱신 단계에서 오류가 발생했습니다")
+                }
+
             }
             JwtCode.SECURITY_ERROR -> throw InvalidTokenException("토큰에 보안 관련 문제가 있습니다")
             JwtCode.MALFORMED -> throw InvalidTokenException("토큰에 문제가 있습니다")
