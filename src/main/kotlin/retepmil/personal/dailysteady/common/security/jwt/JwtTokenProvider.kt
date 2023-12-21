@@ -169,15 +169,5 @@ class JwtTokenProvider(
             .secure(true)
             .sameSite("None")
             .build()
-
-        fun generateRefreshTokenDeleteCookie() = ResponseCookie.from("refreshToken")
-            .value("")
-            .maxAge(0)
-            .build()
-
-        fun generateAccessTokenDeleteCookie() = ResponseCookie.from("x-access-token")
-            .value("")
-            .maxAge(0)
-            .build()
     }
 }
