@@ -6,9 +6,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import retepmil.personal.dailysteady.common.domain.BaseTime
 import retepmil.personal.dailysteady.common.security.domain.MemberRole
+import retepmil.personal.dailysteady.todos.domain.Todo
 
 @Entity
 data class Member(
+
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
@@ -20,12 +22,22 @@ data class Member(
 
     @Column(nullable = false, length = 50)
     var name: String,
-) : BaseTime(), UserDetails {
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
-    var memberRole: List<MemberRole>? = null
 
-    override fun getAuthorities() =
-        memberRole?.map { SimpleGrantedAuthority(it.role.name) }?.toMutableList() ?: mutableListOf<GrantedAuthority>()
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "member")
+    var memberRole: List<MemberRole>? = null,
+
+    @OneToMany(mappedBy = "member")
+    var todos: MutableList<Todo> = mutableListOf(),
+
+    ) : BaseTime(), UserDetails {
+
+    fun addTodo(todo: Todo) = this.todos.add(todo)
+
+    fun removeTodo(todo: Todo) = this.todos.remove(todo)
+
+    override fun getAuthorities() = memberRole
+        ?.map { SimpleGrantedAuthority(it.role.name) }
+        ?.toMutableList() ?: mutableListOf<GrantedAuthority>()
 
     override fun getPassword(): String = this.password
 

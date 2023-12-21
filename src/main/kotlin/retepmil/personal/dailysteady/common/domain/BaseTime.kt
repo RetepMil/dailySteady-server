@@ -11,6 +11,7 @@ import java.time.LocalDateTime
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener::class)
 abstract class BaseTime {
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     var createdAt: LocalDateTime? = LocalDateTime.now()
@@ -20,4 +21,5 @@ abstract class BaseTime {
     @Column(nullable = false)
     var updatedAt: LocalDateTime? = LocalDateTime.now()
         protected set
+
 }

@@ -6,6 +6,7 @@ import java.time.LocalDateTime
 
 @Entity
 data class Record(
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val recordId: Long?,
@@ -19,4 +20,5 @@ data class Record(
 
     @Column(columnDefinition = "TEXT")
     val content: String,
+
 )
