@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletResponse
 import jakarta.validation.Valid
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -36,12 +35,6 @@ class AuthController(
         response: HttpServletResponse,
     ): DataResponseDto<*> {
         logger.debug("SecurityController -> signin 함수 진입 :: 파라미터 : {}", requestDto)
-
-        val authInfo = request.getAttribute("authentication") as Authentication?
-        if (authInfo != null) {
-            logger.debug("Already Logged In :: {}", authInfo)
-            return DataResponseDto(200, "이미 인증된 사용자")
-        }
 
         val responseDto = memberService.signin(requestDto)
 
