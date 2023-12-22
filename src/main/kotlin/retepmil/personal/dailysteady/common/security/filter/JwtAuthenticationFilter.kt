@@ -49,9 +49,10 @@ class JwtAuthenticationFilter(
                         JwtTokenProvider.generateRefreshTokenCookie(dto.tokenInfo.refreshToken).toString())
                 } catch (e: RefreshTokenExpiredException) {
                     logger.debug("토큰 쌍 삭제 시도")
-                    request.cookies.forEach { response.addCookie(it.apply { maxAge = 0 }) }
                 } catch (e: Exception) {
                     throw InvalidTokenException("토큰 갱신 단계에서 오류가 발생했습니다")
+                } finally {
+                    request.cookies.forEach { response.addCookie(it.apply { maxAge = 0 }) }
                 }
 
             }
